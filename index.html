@@ -156,6 +156,7 @@
       0% {
         transform: translateX(0);
       }
+
       100% {
         transform: translateX(-100%);
       }
@@ -211,51 +212,31 @@
   <script>
     /*
       =====================================================
-      1. 구글시트 설정
+      1. Google Sheet CSV 게시 URL
       =====================================================
 
-      원본 구글시트 주소가 아래처럼 생겼다면,
+      현재 방식:
+      - Google Sheet → 파일 → 공유 → 웹에 게시 → CSV
+      - Campaigns 시트 gid = 0
+      - Birthdays 시트 gid = 671387330
 
-      https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/edit#gid=0
-
-      SPREADSHEET_ID에는 이 부분만 넣으세요.
-
-      1AbCdEfGhIjKlMnOpQrStUvWxYz
-
-      중요:
-      - 구글시트 공유 권한은 "링크가 있는 모든 사용자 → 뷰어"로 설정해야 합니다.
-      - "웹에 게시" URL보다 아래 직접 export URL 방식이 캐시 문제를 줄이는 데 유리합니다.
+      주의:
+      - "웹에 게시" CSV는 수정 직후 반영이 몇 분 지연될 수 있습니다.
+      - 테스트할 때는 1~3분 정도 기다린 후 새로고침하는 것이 좋습니다.
     */
 
-    const SPREADSHEET_ID = "";
-
-    const CAMPAIGN_GID = "0";
-    const BIRTHDAY_GID = "671387330";
-
-    const CAMPAIGN_CSV_URL = makeCsvExportUrl(SPREADSHEET_ID, CAMPAIGN_GID);
-    const BIRTHDAY_CSV_URL = makeCsvExportUrl(SPREADSHEET_ID, BIRTHDAY_GID);
-
-    /*
-      =====================================================
-      2. 비상용 기존 게시 URL
-      =====================================================
-
-      SPREADSHEET_ID를 아직 못 찾았을 때만 임시로 사용합니다.
-      최종 운영에서는 위 SPREADSHEET_ID 방식 사용을 추천합니다.
-    */
-
-    const FALLBACK_CAMPAIGN_CSV_URL =
+    const CAMPAIGN_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=0&single=true&output=csv";
 
-    const FALLBACK_BIRTHDAY_CSV_URL =
+    const BIRTHDAY_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=671387330&single=true&output=csv";
 
     /*
       =====================================================
-      3. 화면 표시 시간 설정
+      2. 화면 표시 시간 설정
       =====================================================
 
-      특정 시간에만 화면을 띄우고 싶으면 DISPLAY_TIME_ENABLED를 true로 변경.
+      특정 시간에만 화면을 띄우고 싶으면 DISPLAY_TIME_ENABLED를 true로 변경하세요.
       예: 07:00 이상, 16:00 미만만 화면 표시.
     */
 
@@ -265,23 +246,15 @@
 
     /*
       =====================================================
-      4. 새로고침 설정
+      3. 새로고침 설정
       =====================================================
     */
 
     const DATA_REFRESH_MS = 2 * 60 * 1000;      // 2분마다 시트 다시 읽기
-    const PAGE_REFRESH_MS = 60 * 60 * 1000;     // 1시간마다 전체 새로고침
+    const PAGE_REFRESH_MS = 60 * 60 * 1000;     // 1시간마다 전체 페이지 새로고침
 
     let currentCampaign = null;
     let todayBirthdays = [];
-
-    function makeCsvExportUrl(spreadsheetId, gid) {
-      if (!spreadsheetId || spreadsheetId.includes("여기에")) {
-        return "";
-      }
-
-      return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
-    }
 
     async function init() {
       updateStatus("데이터 불러오는 중");
@@ -302,12 +275,9 @@
 
         document.body.classList.remove("blackout");
 
-        const campaignUrl = CAMPAIGN_CSV_URL || FALLBACK_CAMPAIGN_CSV_URL;
-        const birthdayUrl = BIRTHDAY_CSV_URL || FALLBACK_BIRTHDAY_CSV_URL;
-
         const [campaignCsv, birthdayCsv] = await Promise.all([
-          fetchText(campaignUrl),
-          fetchText(birthdayUrl)
+          fetchText(CAMPAIGN_CSV_URL),
+          fetchText(BIRTHDAY_CSV_URL)
         ]);
 
         validateCsvResponse(campaignCsv);
@@ -323,10 +293,12 @@
         updateStatus("정상 표시 중");
       } catch (error) {
         console.error(error);
+
         renderError(
           "데이터를 불러오지 못했습니다.",
-          "구글시트 공유 권한, CSV URL, 네트워크 연결 상태를 확인해 주세요."
+          "Google Sheet CSV 게시 URL, 시트 게시 상태, 네트워크 연결을 확인해 주세요."
         );
+
         updateStatus("오류 발생");
       }
     }
@@ -339,20 +311,15 @@
       const separator = url.includes("?") ? "&" : "?";
 
       /*
-        캐시 방지용 파라미터를 여러 개 붙입니다.
-        - cb: 일반 캐시 무효화
-        - t: TV 브라우저 캐시 회피
+        캐시 방지용 파라미터입니다.
+        웹에 게시 CSV의 서버 캐시는 완전히 제거할 수 없지만,
+        브라우저/TV 캐시는 최대한 피합니다.
       */
-      const finalUrl = `${url}${separator}cb=${Date.now()}&t=${Math.random().toString(36).slice(2)}`;
+      const finalUrl = `${url}${separator}cb=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
 
       const response = await fetch(finalUrl, {
         method: "GET",
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        }
+        cache: "no-store"
       });
 
       if (!response.ok) {
@@ -370,7 +337,7 @@
         lower.startsWith("<html") ||
         lower.includes("<title>google accounts</title>")
       ) {
-        throw new Error("CSV가 아니라 HTML이 반환되었습니다. 시트 공유 권한을 확인하세요.");
+        throw new Error("CSV가 아니라 HTML이 반환되었습니다. 시트 게시/공유 권한을 확인하세요.");
       }
     }
 
@@ -443,12 +410,14 @@
 
       if (currentCampaign) {
         const campaignMessage = normalize(currentCampaign["안내문구"]);
+
         if (campaignMessage) {
           messages.push(campaignMessage);
         }
       }
 
       const birthdayMessage = makeBirthdayMessage(todayBirthdays);
+
       if (birthdayMessage) {
         messages.push(birthdayMessage);
       }
@@ -504,7 +473,7 @@
       if (!cleanUrl) return "";
 
       /*
-        일반 이미지 URL 또는 상대경로는 그대로 사용
+        일반 이미지 URL 또는 상대경로는 그대로 사용합니다.
       */
       if (
         cleanUrl.match(/\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i) ||
@@ -527,7 +496,8 @@
       const fileId = driveFileMatch?.[1] || driveOpenMatch?.[1];
 
       /*
-        기존 uc, thumbnail보다 lh3 방식이 더 안정적으로 뜨는 경우가 많아 이 방식 사용
+        drive.google.com/uc 또는 thumbnail보다
+        lh3.googleusercontent.com 방식이 더 안정적으로 뜨는 경우가 많아서 이 방식을 사용합니다.
       */
       if (fileId) {
         return `https://lh3.googleusercontent.com/d/${fileId}=w4000`;
@@ -589,6 +559,7 @@
         yyyy-mm-dd
       */
       let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
       if (match) {
         return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
@@ -599,18 +570,21 @@
         yyyy년 m월 d일
       */
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+
       if (match) {
         return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
 
       /*
-        구글시트 CSV에서 날짜가 이상하게 들어올 경우를 대비해 Date 파싱 시도
+        Date 파싱 보조
       */
       const parsed = new Date(text);
+
       if (!isNaN(parsed.getTime())) {
         const yyyy = parsed.getFullYear();
         const mm = String(parsed.getMonth() + 1).padStart(2, "0");
         const dd = String(parsed.getDate()).padStart(2, "0");
+
         return `${yyyy}-${mm}-${dd}`;
       }
 
@@ -626,6 +600,7 @@
         yyyy-mm-dd
       */
       let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
       if (match) {
         return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
@@ -637,6 +612,7 @@
         구글시트에서 05-06이 날짜로 인식되어 2026. 5. 6처럼 나오는 경우 대응
       */
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+
       if (match) {
         return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
@@ -645,6 +621,7 @@
         MM-DD / M-D / M/D / M.D
       */
       match = text.match(/^(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+
       if (match) {
         return `${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`;
       }
@@ -653,9 +630,11 @@
         Date 파싱 보조
       */
       const parsed = new Date(text);
+
       if (!isNaN(parsed.getTime())) {
         const mm = String(parsed.getMonth() + 1).padStart(2, "0");
         const dd = String(parsed.getDate()).padStart(2, "0");
+
         return `${mm}-${dd}`;
       }
 
