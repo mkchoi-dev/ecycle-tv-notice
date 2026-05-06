@@ -38,30 +38,30 @@
         #0f172a;
     }
 
-.visual-area {
-  flex: 1;
-  min-height: 0;
-  padding: 1.6vw 1.6vw 0.8vh;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-}
+    .visual-area {
+      flex: 1;
+      min-height: 0;
+      padding: 1.6vw 1.6vw 0.8vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
 
-.image-frame {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  aspect-ratio: auto;
-  border-radius: 1.2vw;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 2.2vh 5vh rgba(0, 0, 0, 0.32),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    .image-frame {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      aspect-ratio: auto;
+      border-radius: 1.6vw;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 2.2vh 5vh rgba(0, 0, 0, 0.32),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     .campaign-image {
       width: 100%;
@@ -101,39 +101,52 @@
     .ticker-area {
       height: 10vh;
       min-height: 80px;
-      padding: 0 1.8vw 2vh;
+      padding: 0 1.6vw 2vh;
       display: flex;
       align-items: center;
     }
 
-.ticker-shell {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 1.2vw;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.92);
-  color: #0f172a;
-  box-shadow: 0 1.2vh 3.2vh rgba(0, 0, 0, 0.25);
-  display: flex;
-  align-items: center;
-}
+    .ticker-shell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      box-shadow: 0 1.2vh 3.2vh rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+    }
 
-.ticker-label {
-  flex: 0 0 auto;
-  height: 100%;
-  padding: 0 2.1vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #123f7a;
-  color: #ffffff;
-  font-size: 1.28vw;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  z-index: 2;
-  border-radius: 1.2vw 0 0 1.2vw;
-}
+    .ticker-logo-box {
+      flex: 0 0 auto;
+      width: 15vw;
+      min-width: 210px;
+      height: 100%;
+      padding: 0.95vh 1.8vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      z-index: 2;
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .ticker-logo {
+      max-width: 100%;
+      max-height: 72%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .ticker-logo-placeholder {
+      font-size: 1.15vw;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #123f7a;
+      white-space: nowrap;
+    }
 
     .ticker-window {
       position: relative;
@@ -201,7 +214,10 @@
 
     <section class="ticker-area">
       <div class="ticker-shell">
-        <div class="ticker-label">NOTICE</div>
+        <div id="tickerLogoBox" class="ticker-logo-box">
+          <div class="ticker-logo-placeholder">COMPANY</div>
+        </div>
+
         <div class="ticker-window">
           <div id="tickerText" class="ticker-text">안내문을 불러오는 중입니다.</div>
         </div>
@@ -214,7 +230,21 @@
   <script>
     /*
       =====================================================
-      1. Google Sheet CSV 게시 URL
+      1. 회사 CI 이미지 링크
+      =====================================================
+
+      Google Drive 공유 링크를 그대로 넣어도 됩니다.
+      예:
+      const COMPANY_CI_URL = "https://drive.google.com/file/d/파일ID/view?usp=sharing";
+
+      CI를 아직 안 넣을 거면 빈 문자열로 두면 COMPANY 텍스트가 표시됩니다.
+    */
+
+    const COMPANY_CI_URL = "https://drive.google.com/file/d/18JQtgz8ztp6Ihfb-0h-R9HlSfu2IdUnk/view?usp=drive_link";
+
+    /*
+      =====================================================
+      2. Google Sheet CSV 게시 URL
       =====================================================
     */
 
@@ -226,7 +256,7 @@
 
     /*
       =====================================================
-      2. 화면 표시 시간 설정
+      3. 화면 표시 시간 설정
       =====================================================
     */
 
@@ -236,7 +266,7 @@
 
     /*
       =====================================================
-      3. 새로고침 설정
+      4. 새로고침 설정
       =====================================================
     */
 
@@ -247,6 +277,7 @@
     let todayBirthdays = [];
 
     async function init() {
+      renderCompanyLogo();
       updateStatus("데이터 불러오는 중");
 
       await loadData();
@@ -254,6 +285,25 @@
       setInterval(loadData, DATA_REFRESH_MS);
       setInterval(() => location.reload(), PAGE_REFRESH_MS);
       setInterval(updateStatusClock, 30 * 1000);
+    }
+
+    function renderCompanyLogo() {
+      const logoBox = document.getElementById("tickerLogoBox");
+      const logoUrl = convertImageUrl(COMPANY_CI_URL);
+
+      if (!logoUrl || logoUrl.includes("여기에")) {
+        logoBox.innerHTML = `<div class="ticker-logo-placeholder">COMPANY</div>`;
+        return;
+      }
+
+      logoBox.innerHTML = `
+        <img
+          class="ticker-logo"
+          src="${escapeAttribute(logoUrl)}"
+          alt="회사 CI"
+          onerror="this.parentElement.innerHTML = '<div class=&quot;ticker-logo-placeholder&quot;>COMPANY</div>';"
+        />
+      `;
     }
 
     async function loadData() {
