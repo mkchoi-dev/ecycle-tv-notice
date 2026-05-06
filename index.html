@@ -27,28 +27,47 @@
       flex-direction: column;
     }
 
+    /*
+      =====================================================
+      전체 화면 구조
+      =====================================================
+
+      상단 이미지 영역과 하단 안내 영역을 grid로 분리합니다.
+      그래서 이미지가 커지거나 비율이 달라도 하단 NOTICE 영역을 침범하지 않습니다.
+    */
+
     .page {
       width: 100vw;
       height: 100vh;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 10vh;
+      gap: 1.2vh;
+      padding: 1.5vw 1.5vw 2vh;
       background:
         radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 30%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32%),
         #0f172a;
     }
 
+    /*
+      =====================================================
+      상단 이미지 카드 영역
+      =====================================================
+    */
+
     .visual-area {
-      flex: 1;
       min-height: 0;
-      padding: 1.5vw 1.5vw 0.8vh;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .image-frame {
-      flex: 0 0 auto;
+      width: 100%;
+      height: 100%;
       border-radius: 1.6vw;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.08);
@@ -95,10 +114,17 @@
       color: rgba(255, 255, 255, 0.72);
     }
 
+    /*
+      =====================================================
+      하단 안내 영역
+      =====================================================
+    */
+
     .ticker-area {
-      height: 10vh;
-      min-height: 80px;
-      padding: 0 1.5vw 2vh;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      padding: 0;
       display: flex;
       align-items: center;
     }
@@ -222,12 +248,6 @@
       =====================================================
       1. 회사 CI 이미지 링크
       =====================================================
-
-      Google Drive 공유 링크를 그대로 넣어도 됩니다.
-      예:
-      const COMPANY_CI_URL = "https://drive.google.com/file/d/파일ID/view?usp=sharing";
-
-      CI를 아직 안 넣을 거면 빈 문자열로 두세요.
     */
 
     const COMPANY_CI_URL = "https://drive.google.com/file/d/18JQtgz8ztp6Ihfb-0h-R9HlSfu2IdUnk/view?usp=drive_link";
@@ -248,6 +268,9 @@
       =====================================================
       3. 화면 표시 시간 설정
       =====================================================
+
+      특정 시간에만 화면을 띄우고 싶으면 DISPLAY_TIME_ENABLED를 true로 변경하세요.
+      예: 07:00 이상, 16:00 미만만 화면 표시.
     */
 
     const DISPLAY_TIME_ENABLED = false;
@@ -268,39 +291,13 @@
 
     async function init() {
       renderCompanyLogo();
-      resizeImageFrame();
       updateStatus("데이터 불러오는 중");
 
       await loadData();
 
-      window.addEventListener("resize", resizeImageFrame);
-
       setInterval(loadData, DATA_REFRESH_MS);
       setInterval(() => location.reload(), PAGE_REFRESH_MS);
       setInterval(updateStatusClock, 30 * 1000);
-    }
-
-    function resizeImageFrame() {
-      const visualArea = document.querySelector(".visual-area");
-      const frame = document.getElementById("imageFrame");
-
-      if (!visualArea || !frame) return;
-
-      const areaWidth = visualArea.clientWidth;
-      const areaHeight = visualArea.clientHeight;
-
-      const targetRatio = 16 / 8;
-
-      let frameWidth = areaWidth;
-      let frameHeight = frameWidth / targetRatio;
-
-      if (frameHeight > areaHeight) {
-        frameHeight = areaHeight;
-        frameWidth = frameHeight * targetRatio;
-      }
-
-      frame.style.width = `${frameWidth}px`;
-      frame.style.height = `${frameHeight}px`;
     }
 
     function renderCompanyLogo() {
@@ -413,7 +410,6 @@
     }
 
     function render() {
-      resizeImageFrame();
       renderImage();
       renderTicker();
     }
