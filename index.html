@@ -191,7 +191,7 @@
       <div id="imageFrame" class="image-frame">
         <div class="empty-state">
           <div class="empty-title">안내 화면을 불러오는 중입니다.</div>
-          <div class="empty-desc">Google Sheet 게시 URL과 네트워크 상태를 확인하고 있습니다.</div>
+          <div class="empty-desc">Google Sheet 데이터를 확인하고 있습니다.</div>
         </div>
       </div>
     </section>
@@ -210,42 +210,83 @@
 
   <script>
     /*
-      ==============================
-      1. 여기에 CSV URL 2개를 넣으세요
-      ==============================
+      =====================================================
+      1. 구글시트 설정
+      =====================================================
+
+      원본 구글시트 주소가 아래처럼 생겼다면,
+
+      https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/edit#gid=0
+
+      SPREADSHEET_ID에는 이 부분만 넣으세요.
+
+      1AbCdEfGhIjKlMnOpQrStUvWxYz
+
+      중요:
+      - 구글시트 공유 권한은 "링크가 있는 모든 사용자 → 뷰어"로 설정해야 합니다.
+      - "웹에 게시" URL보다 아래 직접 export URL 방식이 캐시 문제를 줄이는 데 유리합니다.
     */
 
-    const CAMPAIGN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=0&single=true&output=csv";
-    const BIRTHDAY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=671387330&single=true&output=csv";
+    const SPREADSHEET_ID = "1uwChzA-qZjoE7r0V3IDphBPDrJgo4m5QavERnlEZac0";
+
+    const CAMPAIGN_GID = "0";
+    const BIRTHDAY_GID = "671387330";
+
+    const CAMPAIGN_CSV_URL = makeCsvExportUrl(SPREADSHEET_ID, CAMPAIGN_GID);
+    const BIRTHDAY_CSV_URL = makeCsvExportUrl(SPREADSHEET_ID, BIRTHDAY_GID);
 
     /*
-      ==============================
-      2. 화면 표시 시간 설정
-      ==============================
-      예: 07:00 이상, 16:00 미만만 화면 표시
-      이 기능이 필요 없으면 DISPLAY_TIME_ENABLED를 false로 바꾸세요.
+      =====================================================
+      2. 비상용 기존 게시 URL
+      =====================================================
+
+      SPREADSHEET_ID를 아직 못 찾았을 때만 임시로 사용합니다.
+      최종 운영에서는 위 SPREADSHEET_ID 방식 사용을 추천합니다.
+    */
+
+    const FALLBACK_CAMPAIGN_CSV_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=0&single=true&output=csv";
+
+    const FALLBACK_BIRTHDAY_CSV_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=671387330&single=true&output=csv";
+
+    /*
+      =====================================================
+      3. 화면 표시 시간 설정
+      =====================================================
+
+      특정 시간에만 화면을 띄우고 싶으면 DISPLAY_TIME_ENABLED를 true로 변경.
+      예: 07:00 이상, 16:00 미만만 화면 표시.
     */
 
     const DISPLAY_TIME_ENABLED = false;
-    const DISPLAY_START_HOUR = 6;
-    const DISPLAY_END_HOUR = 17;
+    const DISPLAY_START_HOUR = 7;
+    const DISPLAY_END_HOUR = 16;
 
     /*
-      ==============================
-      3. 새로고침 설정
-      ==============================
+      =====================================================
+      4. 새로고침 설정
+      =====================================================
     */
 
-    const DATA_REFRESH_MS = 5 * 60 * 1000;      // 5분마다 시트 다시 읽기
+    const DATA_REFRESH_MS = 2 * 60 * 1000;      // 2분마다 시트 다시 읽기
     const PAGE_REFRESH_MS = 60 * 60 * 1000;     // 1시간마다 전체 새로고침
 
     let currentCampaign = null;
     let todayBirthdays = [];
 
+    function makeCsvExportUrl(spreadsheetId, gid) {
+      if (!spreadsheetId || spreadsheetId.includes("여기에")) {
+        return "";
+      }
+
+      return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
+    }
+
     async function init() {
       updateStatus("데이터 불러오는 중");
+
       await loadData();
-      updateStatus("정상 표시 중");
 
       setInterval(loadData, DATA_REFRESH_MS);
       setInterval(() => location.reload(), PAGE_REFRESH_MS);
@@ -261,10 +302,16 @@
 
         document.body.classList.remove("blackout");
 
+        const campaignUrl = CAMPAIGN_CSV_URL || FALLBACK_CAMPAIGN_CSV_URL;
+        const birthdayUrl = BIRTHDAY_CSV_URL || FALLBACK_BIRTHDAY_CSV_URL;
+
         const [campaignCsv, birthdayCsv] = await Promise.all([
-          fetchText(CAMPAIGN_CSV_URL),
-          fetchText(BIRTHDAY_CSV_URL)
+          fetchText(campaignUrl),
+          fetchText(birthdayUrl)
         ]);
+
+        validateCsvResponse(campaignCsv);
+        validateCsvResponse(birthdayCsv);
 
         const campaignRows = parseCSV(campaignCsv);
         const birthdayRows = parseCSV(birthdayCsv);
@@ -273,27 +320,58 @@
         todayBirthdays = findTodayBirthdays(birthdayRows);
 
         render();
+        updateStatus("정상 표시 중");
       } catch (error) {
         console.error(error);
-        renderError("데이터를 불러오지 못했습니다.", "CSV 게시 URL, 시트 공개 상태, 네트워크 연결을 확인해 주세요.");
+        renderError(
+          "데이터를 불러오지 못했습니다.",
+          "구글시트 공유 권한, CSV URL, 네트워크 연결 상태를 확인해 주세요."
+        );
         updateStatus("오류 발생");
       }
     }
 
     async function fetchText(url) {
-      if (!url || url.includes("여기에")) {
-        throw new Error("CSV URL이 입력되지 않았습니다.");
+      if (!url) {
+        throw new Error("CSV URL이 비어 있습니다.");
       }
 
-      const cacheBust = Date.now();
       const separator = url.includes("?") ? "&" : "?";
-      const response = await fetch(`${url}${separator}cacheBust=${cacheBust}`);
+
+      /*
+        캐시 방지용 파라미터를 여러 개 붙입니다.
+        - cb: 일반 캐시 무효화
+        - t: TV 브라우저 캐시 회피
+      */
+      const finalUrl = `${url}${separator}cb=${Date.now()}&t=${Math.random().toString(36).slice(2)}`;
+
+      const response = await fetch(finalUrl, {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`CSV 요청 실패: ${response.status}`);
       }
 
       return await response.text();
+    }
+
+    function validateCsvResponse(text) {
+      const lower = String(text || "").trim().toLowerCase();
+
+      if (
+        lower.startsWith("<!doctype html") ||
+        lower.startsWith("<html") ||
+        lower.includes("<title>google accounts</title>")
+      ) {
+        throw new Error("CSV가 아니라 HTML이 반환되었습니다. 시트 공유 권한을 확인하세요.");
+      }
     }
 
     function findTodayCampaign(rows) {
@@ -353,7 +431,7 @@
           class="campaign-image"
           src="${escapeAttribute(imageUrl)}"
           alt="캠페인 안내 이미지"
-          onerror="this.parentElement.innerHTML = '<div class=&quot;empty-state&quot;><div class=&quot;empty-title&quot;>이미지를 불러오지 못했습니다.</div><div class=&quot;empty-desc&quot;>Google Drive 이미지 공유 권한을 확인해 주세요.</div></div>';"
+          onerror="this.parentElement.innerHTML = '<div class=&quot;empty-state&quot;><div class=&quot;empty-title&quot;>이미지를 불러오지 못했습니다.</div><div class=&quot;empty-desc&quot;>Google Drive 이미지 공유 권한 또는 이미지 링크를 확인해 주세요.</div></div>';"
         />
       `;
     }
@@ -365,11 +443,15 @@
 
       if (currentCampaign) {
         const campaignMessage = normalize(currentCampaign["안내문구"]);
-        if (campaignMessage) messages.push(campaignMessage);
+        if (campaignMessage) {
+          messages.push(campaignMessage);
+        }
       }
 
       const birthdayMessage = makeBirthdayMessage(todayBirthdays);
-      if (birthdayMessage) messages.push(birthdayMessage);
+      if (birthdayMessage) {
+        messages.push(birthdayMessage);
+      }
 
       if (!messages.length) {
         ticker.textContent = "현재 표시할 안내문이 없습니다.";
@@ -415,32 +497,44 @@
 
       return hour >= DISPLAY_START_HOUR && hour < DISPLAY_END_HOUR;
     }
-function convertImageUrl(url) {
-  const cleanUrl = normalize(url);
 
-  if (!cleanUrl) return "";
+    function convertImageUrl(url) {
+      const cleanUrl = normalize(url);
 
-  // 일반 이미지 URL 또는 상대경로는 그대로 사용
-  if (
-    cleanUrl.match(/\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i) ||
-    cleanUrl.startsWith("images/") ||
-    cleanUrl.startsWith("./") ||
-    cleanUrl.startsWith("../")
-  ) {
-    return cleanUrl;
-  }
+      if (!cleanUrl) return "";
 
-  // Google Drive 공유 링크에서 파일 ID 추출
-  const driveFileMatch = cleanUrl.match(/\/file\/d\/([^/]+)/);
-  const driveOpenMatch = cleanUrl.match(/[?&]id=([^&]+)/);
-  const fileId = driveFileMatch?.[1] || driveOpenMatch?.[1];
+      /*
+        일반 이미지 URL 또는 상대경로는 그대로 사용
+      */
+      if (
+        cleanUrl.match(/\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i) ||
+        cleanUrl.startsWith("images/") ||
+        cleanUrl.startsWith("./") ||
+        cleanUrl.startsWith("../") ||
+        cleanUrl.includes("lh3.googleusercontent.com")
+      ) {
+        return cleanUrl;
+      }
 
-  if (fileId) {
-    return `https://lh3.googleusercontent.com/d/${fileId}=w4000`;
-  }
+      /*
+        Google Drive 공유 링크 처리
+        예:
+        https://drive.google.com/file/d/파일ID/view?usp=sharing
+      */
+      const driveFileMatch = cleanUrl.match(/\/file\/d\/([^/]+)/);
+      const driveOpenMatch = cleanUrl.match(/[?&]id=([^&]+)/);
 
-  return cleanUrl;
-}
+      const fileId = driveFileMatch?.[1] || driveOpenMatch?.[1];
+
+      /*
+        기존 uc, thumbnail보다 lh3 방식이 더 안정적으로 뜨는 경우가 많아 이 방식 사용
+      */
+      if (fileId) {
+        return `https://lh3.googleusercontent.com/d/${fileId}=w4000`;
+      }
+
+      return cleanUrl;
+    }
 
     function updateStatus(message) {
       const status = document.getElementById("status");
@@ -491,18 +585,32 @@ function convertImageUrl(url) {
 
       if (!text) return "";
 
-      // 이미 yyyy-mm-dd면 그대로 사용
-      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-        return text;
+      /*
+        yyyy-mm-dd
+      */
+      let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (match) {
+        return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
 
-      // yyyy. m. d / yyyy/m/d 같은 형태 보정
-      const match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
-
+      /*
+        yyyy. m. d
+        yyyy/m/d
+        yyyy년 m월 d일
+      */
+      match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
       if (match) {
-        const yyyy = match[1];
-        const mm = String(match[2]).padStart(2, "0");
-        const dd = String(match[3]).padStart(2, "0");
+        return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+      }
+
+      /*
+        구글시트 CSV에서 날짜가 이상하게 들어올 경우를 대비해 Date 파싱 시도
+      */
+      const parsed = new Date(text);
+      if (!isNaN(parsed.getTime())) {
+        const yyyy = parsed.getFullYear();
+        const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+        const dd = String(parsed.getDate()).padStart(2, "0");
         return `${yyyy}-${mm}-${dd}`;
       }
 
@@ -514,25 +622,41 @@ function convertImageUrl(url) {
 
       if (!text) return "";
 
-      // MM-DD
-      if (/^\d{2}-\d{2}$/.test(text)) {
-        return text;
+      /*
+        yyyy-mm-dd
+      */
+      let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (match) {
+        return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
       }
 
-      // M-D, M/D, M.D
-      const mdMatch = text.match(/^(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+      /*
+        yyyy. m. d
+        yyyy/m/d
+        yyyy년 m월 d일
+        구글시트에서 05-06이 날짜로 인식되어 2026. 5. 6처럼 나오는 경우 대응
+      */
+      match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+      if (match) {
+        return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+      }
 
-      if (mdMatch) {
-        const mm = String(mdMatch[1]).padStart(2, "0");
-        const dd = String(mdMatch[2]).padStart(2, "0");
+      /*
+        MM-DD / M-D / M/D / M.D
+      */
+      match = text.match(/^(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+      if (match) {
+        return `${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`;
+      }
+
+      /*
+        Date 파싱 보조
+      */
+      const parsed = new Date(text);
+      if (!isNaN(parsed.getTime())) {
+        const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+        const dd = String(parsed.getDate()).padStart(2, "0");
         return `${mm}-${dd}`;
-      }
-
-      // yyyy-mm-dd 형태가 들어왔을 경우 뒤의 MM-DD만 사용
-      const ymdMatch = text.match(/^\d{4}-(\d{2})-(\d{2})$/);
-
-      if (ymdMatch) {
-        return `${ymdMatch[1]}-${ymdMatch[2]}`;
       }
 
       return text;
