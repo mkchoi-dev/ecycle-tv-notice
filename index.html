@@ -27,15 +27,6 @@
       flex-direction: column;
     }
 
-    /*
-      =====================================================
-      전체 화면 구조
-      =====================================================
-
-      상단 이미지 영역과 하단 안내 영역을 grid로 분리합니다.
-      그래서 이미지가 커지거나 비율이 달라도 하단 NOTICE 영역을 침범하지 않습니다.
-    */
-
     .page {
       width: 100vw;
       height: 100vh;
@@ -48,12 +39,6 @@
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32%),
         #0f172a;
     }
-
-    /*
-      =====================================================
-      상단 이미지 카드 영역
-      =====================================================
-    */
 
     .visual-area {
       min-height: 0;
@@ -113,12 +98,6 @@
       font-weight: 500;
       color: rgba(255, 255, 255, 0.72);
     }
-
-    /*
-      =====================================================
-      하단 안내 영역
-      =====================================================
-    */
 
     .ticker-area {
       width: 100%;
@@ -250,7 +229,7 @@
       =====================================================
     */
 
-    const COMPANY_CI_URL = "https://drive.google.com/file/d/18JQtgz8ztp6Ihfb-0h-R9HlSfu2IdUnk/view?usp=drive_link";
+    var COMPANY_CI_URL = "https://drive.google.com/file/d/18JQtgz8ztp6Ihfb-0h-R9HlSfu2IdUnk/view?usp=drive_link";
 
     /*
       =====================================================
@@ -258,24 +237,21 @@
       =====================================================
     */
 
-    const CAMPAIGN_CSV_URL =
+    var CAMPAIGN_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=0&single=true&output=csv";
 
-    const BIRTHDAY_CSV_URL =
+    var BIRTHDAY_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=671387330&single=true&output=csv";
 
     /*
       =====================================================
       3. 화면 표시 시간 설정
       =====================================================
-
-      특정 시간에만 화면을 띄우고 싶으면 DISPLAY_TIME_ENABLED를 true로 변경하세요.
-      예: 07:00 이상, 16:00 미만만 화면 표시.
     */
 
-    const DISPLAY_TIME_ENABLED = false;
-    const DISPLAY_START_HOUR = 7;
-    const DISPLAY_END_HOUR = 16;
+    var DISPLAY_TIME_ENABLED = false;
+    var DISPLAY_START_HOUR = 7;
+    var DISPLAY_END_HOUR = 16;
 
     /*
       =====================================================
@@ -283,68 +259,75 @@
       =====================================================
     */
 
-    const DATA_REFRESH_MS = 2 * 60 * 1000;
-    const PAGE_REFRESH_MS = 60 * 60 * 1000;
+    var DATA_REFRESH_MS = 2 * 60 * 1000;
+    var PAGE_REFRESH_MS = 60 * 60 * 1000;
 
-    let currentCampaign = null;
-    let todayBirthdays = [];
+    var currentCampaign = null;
+    var todayBirthdays = [];
 
-    async function init() {
+    function init() {
       renderCompanyLogo();
       updateStatus("데이터 불러오는 중");
 
-      await loadData();
+      loadData();
 
       setInterval(loadData, DATA_REFRESH_MS);
-      setInterval(() => location.reload(), PAGE_REFRESH_MS);
+      setInterval(function () {
+        location.reload();
+      }, PAGE_REFRESH_MS);
       setInterval(updateStatusClock, 30 * 1000);
     }
 
     function renderCompanyLogo() {
-      const logoBox = document.getElementById("tickerLogoBox");
-      const logoUrl = convertImageUrl(COMPANY_CI_URL);
+      var logoBox = document.getElementById("tickerLogoBox");
+      var logoUrl = convertImageUrl(COMPANY_CI_URL);
+      var fallbackUrl = makeDriveThumbnailUrl(COMPANY_CI_URL);
 
-      if (!logoUrl || logoUrl.includes("여기에")) {
-        logoBox.innerHTML = `<div class="ticker-logo-placeholder">COMPANY</div>`;
+      if (!logoUrl || logoUrl.indexOf("여기에") !== -1) {
+        logoBox.innerHTML = '<div class="ticker-logo-placeholder">COMPANY</div>';
         return;
       }
 
-      logoBox.innerHTML = `
-        <img
-          class="ticker-logo"
-          src="${escapeAttribute(logoUrl)}"
-          alt="회사 CI"
-          onerror="this.parentElement.innerHTML = '<div class=&quot;ticker-logo-placeholder&quot;>COMPANY</div>';"
-        />
-      `;
+      logoBox.innerHTML =
+        '<img ' +
+          'class="ticker-logo" ' +
+          'src="' + escapeAttribute(logoUrl) + '" ' +
+          'data-fallback="' + escapeAttribute(fallbackUrl) + '" ' +
+          'data-kind="logo" ' +
+          'alt="회사 CI" ' +
+          'onerror="handleImageError(this)" ' +
+        '/>';
     }
 
-    async function loadData() {
-      try {
-        if (!isDisplayTime()) {
-          document.body.classList.add("blackout");
-          return;
-        }
+    function loadData() {
+      if (!isDisplayTime()) {
+        document.body.classList.add("blackout");
+        return;
+      }
 
-        document.body.classList.remove("blackout");
+      document.body.classList.remove("blackout");
 
-        const [campaignCsv, birthdayCsv] = await Promise.all([
-          fetchText(CAMPAIGN_CSV_URL),
-          fetchText(BIRTHDAY_CSV_URL)
-        ]);
+      Promise.all([
+        fetchText(CAMPAIGN_CSV_URL),
+        fetchText(BIRTHDAY_CSV_URL)
+      ])
+      .then(function (results) {
+        var campaignCsv = results[0];
+        var birthdayCsv = results[1];
 
         validateCsvResponse(campaignCsv);
         validateCsvResponse(birthdayCsv);
 
-        const campaignRows = parseCSV(campaignCsv);
-        const birthdayRows = parseCSV(birthdayCsv);
+        var campaignRows = parseCSV(campaignCsv);
+        var birthdayRows = parseCSV(birthdayCsv);
 
         currentCampaign = findTodayCampaign(campaignRows);
         todayBirthdays = findTodayBirthdays(birthdayRows);
 
         render();
         updateStatus("정상 표시 중");
-      } catch (error) {
+      })
+      .catch(function (error) {
         console.error(error);
 
         renderError(
@@ -353,60 +336,73 @@
         );
 
         updateStatus("오류 발생");
-      }
+      });
     }
 
-    async function fetchText(url) {
+    function fetchText(url) {
       if (!url) {
-        throw new Error("CSV URL이 비어 있습니다.");
+        return Promise.reject(new Error("CSV URL이 비어 있습니다."));
       }
 
-      const separator = url.includes("?") ? "&" : "?";
-      const finalUrl = `${url}${separator}cb=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
+      var separator = url.indexOf("?") !== -1 ? "&" : "?";
+      var finalUrl = url + separator + "cb=" + Date.now() + "&r=" + Math.random().toString(36).slice(2);
 
-      const response = await fetch(finalUrl, {
+      return fetch(finalUrl, {
         method: "GET",
         cache: "no-store"
+      }).then(function (response) {
+        if (!response.ok) {
+          throw new Error("CSV 요청 실패: " + response.status);
+        }
+
+        return response.text();
       });
-
-      if (!response.ok) {
-        throw new Error(`CSV 요청 실패: ${response.status}`);
-      }
-
-      return await response.text();
     }
 
     function validateCsvResponse(text) {
-      const lower = String(text || "").trim().toLowerCase();
+      var lower = String(text || "").trim().toLowerCase();
 
       if (
-        lower.startsWith("<!doctype html") ||
-        lower.startsWith("<html") ||
-        lower.includes("<title>google accounts</title>")
+        lower.indexOf("<!doctype html") === 0 ||
+        lower.indexOf("<html") === 0 ||
+        lower.indexOf("<title>google accounts</title>") !== -1
       ) {
         throw new Error("CSV가 아니라 HTML이 반환되었습니다. 시트 게시/공유 권한을 확인하세요.");
       }
     }
 
     function findTodayCampaign(rows) {
-      const today = getTodayString();
+      var today = getTodayString();
 
-      return rows.find(row => {
-        const enabled = normalize(row["표시여부"]).toUpperCase();
-        const startDate = normalizeDate(row["시작일"]);
-        const endDate = normalizeDate(row["종료일"]);
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
 
-        return enabled === "Y" && startDate <= today && endDate >= today;
-      }) || null;
+        var enabled = normalize(row["표시여부"]).toUpperCase();
+        var startDate = normalizeDate(row["시작일"]);
+        var endDate = normalizeDate(row["종료일"]);
+
+        if (enabled === "Y" && startDate <= today && endDate >= today) {
+          return row;
+        }
+      }
+
+      return null;
     }
 
     function findTodayBirthdays(rows) {
-      const todayMMDD = getTodayMMDD();
+      var todayMMDD = getTodayMMDD();
+      var result = [];
 
-      return rows.filter(row => {
-        const birthday = normalizeBirthday(row["생일"]);
-        return birthday === todayMMDD;
-      });
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var birthday = normalizeBirthday(row["생일"]);
+
+        if (birthday === todayMMDD) {
+          result.push(row);
+        }
+      }
+
+      return result;
     }
 
     function render() {
@@ -415,55 +411,54 @@
     }
 
     function renderImage() {
-      const frame = document.getElementById("imageFrame");
+      var frame = document.getElementById("imageFrame");
 
       if (!currentCampaign) {
-        frame.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-title">오늘 표시할 캠페인이 없습니다.</div>
-            <div class="empty-desc">Campaigns 시트에서 표시여부 Y, 시작일~종료일 범위를 확인해 주세요.</div>
-          </div>
-        `;
+        frame.innerHTML =
+          '<div class="empty-state">' +
+            '<div class="empty-title">오늘 표시할 캠페인이 없습니다.</div>' +
+            '<div class="empty-desc">Campaigns 시트에서 표시여부 Y, 시작일~종료일 범위를 확인해 주세요.</div>' +
+          '</div>';
         return;
       }
 
-      const rawImageUrl = normalize(currentCampaign["이미지링크"]);
-      const imageUrl = convertImageUrl(rawImageUrl);
+      var rawImageUrl = normalize(currentCampaign["이미지링크"]);
+      var imageUrl = convertImageUrl(rawImageUrl);
+      var fallbackImageUrl = makeDriveThumbnailUrl(rawImageUrl);
 
       if (!imageUrl) {
-        frame.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-title">이미지 링크가 없습니다.</div>
-            <div class="empty-desc">Campaigns 시트의 이미지링크 칸을 확인해 주세요.</div>
-          </div>
-        `;
+        frame.innerHTML =
+          '<div class="empty-state">' +
+            '<div class="empty-title">이미지 링크가 없습니다.</div>' +
+            '<div class="empty-desc">Campaigns 시트의 이미지링크 칸을 확인해 주세요.</div>' +
+          '</div>';
         return;
       }
 
-      frame.innerHTML = `
-        <img
-          class="campaign-image"
-          src="${escapeAttribute(imageUrl)}"
-          alt="캠페인 안내 이미지"
-          onerror="this.parentElement.innerHTML = '<div class=&quot;empty-state&quot;><div class=&quot;empty-title&quot;>이미지를 불러오지 못했습니다.</div><div class=&quot;empty-desc&quot;>Google Drive 이미지 공유 권한 또는 이미지 링크를 확인해 주세요.</div></div>';"
-        />
-      `;
+      frame.innerHTML =
+        '<img ' +
+          'class="campaign-image" ' +
+          'src="' + escapeAttribute(imageUrl) + '" ' +
+          'data-fallback="' + escapeAttribute(fallbackImageUrl) + '" ' +
+          'data-kind="campaign" ' +
+          'alt="캠페인 안내 이미지" ' +
+          'onerror="handleImageError(this)" ' +
+        '/>';
     }
 
     function renderTicker() {
-      const ticker = document.getElementById("tickerText");
-
-      const messages = [];
+      var ticker = document.getElementById("tickerText");
+      var messages = [];
 
       if (currentCampaign) {
-        const campaignMessage = normalize(currentCampaign["안내문구"]);
+        var campaignMessage = normalize(currentCampaign["안내문구"]);
 
         if (campaignMessage) {
           messages.push(campaignMessage);
         }
       }
 
-      const birthdayMessage = makeBirthdayMessage(todayBirthdays);
+      var birthdayMessage = makeBirthdayMessage(todayBirthdays);
 
       if (birthdayMessage) {
         messages.push(birthdayMessage);
@@ -478,79 +473,143 @@
     }
 
     function makeBirthdayMessage(rows) {
-      if (!rows.length) return "";
+      if (!rows || !rows.length) return "";
 
-      const people = rows.map(row => {
-        const team = normalize(row["팀명"]);
-        const position = normalize(row["직급"]);
-        const name = normalize(row["이름"]);
+      var people = [];
+
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+
+        var team = normalize(row["팀명"]);
+        var position = normalize(row["직급"]);
+        var name = normalize(row["이름"]);
 
         if (team && position && name) {
-          return `${team} ${name} ${position}님`;
+          people.push(team + " " + name + " " + position + "님");
+        } else if (position && name) {
+          people.push(name + " " + position + "님");
+        } else if (name) {
+          people.push(name + "님");
         }
-
-        if (position && name) {
-          return `${name} ${position}님`;
-        }
-
-        if (name) {
-          return `${name}님`;
-        }
-
-        return "";
-      }).filter(Boolean);
+      }
 
       if (!people.length) return "";
 
-      return `🎉 오늘은 ${people.join(", ")}의 생일입니다. 생일을 진심으로 축하드립니다!`;
+      return "🎉 오늘은 " + people.join(", ") + "의 생일입니다. 생일을 진심으로 축하드립니다!";
     }
 
     function isDisplayTime() {
       if (!DISPLAY_TIME_ENABLED) return true;
 
-      const now = new Date();
-      const hour = now.getHours();
+      var now = new Date();
+      var hour = now.getHours();
 
       return hour >= DISPLAY_START_HOUR && hour < DISPLAY_END_HOUR;
     }
 
+    /*
+      =====================================================
+      이미지 URL 변환
+      =====================================================
+
+      1차: lh3.googleusercontent.com
+      2차 fallback: drive.google.com/thumbnail
+      구형 TV 브라우저 호환성을 위해 optional chaining 등 최신 문법 사용 안 함.
+    */
+
     function convertImageUrl(url) {
-      const cleanUrl = normalize(url);
+      var cleanUrl = normalize(url);
 
       if (!cleanUrl) return "";
 
       if (
         cleanUrl.match(/\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i) ||
-        cleanUrl.startsWith("images/") ||
-        cleanUrl.startsWith("./") ||
-        cleanUrl.startsWith("../") ||
-        cleanUrl.includes("lh3.googleusercontent.com")
+        cleanUrl.indexOf("images/") === 0 ||
+        cleanUrl.indexOf("./") === 0 ||
+        cleanUrl.indexOf("../") === 0 ||
+        cleanUrl.indexOf("lh3.googleusercontent.com") !== -1 ||
+        cleanUrl.indexOf("github.io") !== -1 ||
+        cleanUrl.indexOf("ibb.co") !== -1 ||
+        cleanUrl.indexOf("i.ibb.co") !== -1 ||
+        cleanUrl.indexOf("postimg.cc") !== -1
       ) {
         return cleanUrl;
       }
 
-      const driveFileMatch = cleanUrl.match(/\/file\/d\/([^/]+)/);
-      const driveOpenMatch = cleanUrl.match(/[?&]id=([^&]+)/);
-
-      const fileId = driveFileMatch?.[1] || driveOpenMatch?.[1];
+      var fileId = extractDriveFileId(cleanUrl);
 
       if (fileId) {
-        return `https://lh3.googleusercontent.com/d/${fileId}=w4000`;
+        return "https://lh3.googleusercontent.com/d/" + fileId + "=w4000";
       }
 
       return cleanUrl;
     }
 
+    function makeDriveThumbnailUrl(url) {
+      var cleanUrl = normalize(url);
+
+      if (!cleanUrl) return "";
+
+      var fileId = extractDriveFileId(cleanUrl);
+
+      if (fileId) {
+        return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w4000";
+      }
+
+      return "";
+    }
+
+    function extractDriveFileId(url) {
+      var cleanUrl = normalize(url);
+
+      if (!cleanUrl) return "";
+
+      var driveFileMatch = cleanUrl.match(/\/file\/d\/([^/]+)/);
+      var driveOpenMatch = cleanUrl.match(/[?&]id=([^&]+)/);
+
+      if (driveFileMatch && driveFileMatch[1]) {
+        return driveFileMatch[1];
+      }
+
+      if (driveOpenMatch && driveOpenMatch[1]) {
+        return driveOpenMatch[1];
+      }
+
+      return "";
+    }
+
+    function handleImageError(img) {
+      var fallback = img.getAttribute("data-fallback");
+      var kind = img.getAttribute("data-kind");
+
+      if (fallback && img.src !== fallback) {
+        img.src = fallback;
+        img.setAttribute("data-fallback", "");
+        return;
+      }
+
+      if (kind === "logo") {
+        img.parentElement.innerHTML = '<div class="ticker-logo-placeholder">COMPANY</div>';
+        return;
+      }
+
+      img.parentElement.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-title">이미지를 불러오지 못했습니다.</div>' +
+          '<div class="empty-desc">TV 브라우저에서 Google Drive 이미지 로딩이 차단되었을 수 있습니다.</div>' +
+        '</div>';
+    }
+
     function updateStatus(message) {
-      const status = document.getElementById("status");
+      var status = document.getElementById("status");
 
       if (!status) return;
 
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mm = String(now.getMinutes()).padStart(2, "0");
+      var now = new Date();
+      var hh = String(now.getHours()).padStart(2, "0");
+      var mm = String(now.getMinutes()).padStart(2, "0");
 
-      status.textContent = `${message} · ${hh}:${mm}`;
+      status.textContent = message + " · " + hh + ":" + mm;
     }
 
     function updateStatusClock() {
@@ -558,112 +617,111 @@
     }
 
     function renderError(title, desc) {
-      const frame = document.getElementById("imageFrame");
-      const ticker = document.getElementById("tickerText");
+      var frame = document.getElementById("imageFrame");
+      var ticker = document.getElementById("tickerText");
 
-      frame.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-title">${escapeHtml(title)}</div>
-          <div class="empty-desc">${escapeHtml(desc)}</div>
-        </div>
-      `;
+      frame.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-title">' + escapeHtml(title) + '</div>' +
+          '<div class="empty-desc">' + escapeHtml(desc) + '</div>' +
+        '</div>';
 
       ticker.textContent = "안내문 데이터를 불러오지 못했습니다.";
     }
 
     function getTodayString() {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
+      var now = new Date();
+      var yyyy = now.getFullYear();
+      var mm = String(now.getMonth() + 1).padStart(2, "0");
+      var dd = String(now.getDate()).padStart(2, "0");
 
-      return `${yyyy}-${mm}-${dd}`;
+      return yyyy + "-" + mm + "-" + dd;
     }
 
     function getTodayMMDD() {
-      const now = new Date();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
+      var now = new Date();
+      var mm = String(now.getMonth() + 1).padStart(2, "0");
+      var dd = String(now.getDate()).padStart(2, "0");
 
-      return `${mm}-${dd}`;
+      return mm + "-" + dd;
     }
 
     function normalizeDate(value) {
-      const text = normalize(value);
+      var text = normalize(value);
 
       if (!text) return "";
 
-      let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      var match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 
       if (match) {
-        return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+        return match[1] + "-" + String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
       }
 
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+        return match[1] + "-" + String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
       }
 
-      const parsed = new Date(text);
+      var parsed = new Date(text);
 
       if (!isNaN(parsed.getTime())) {
-        const yyyy = parsed.getFullYear();
-        const mm = String(parsed.getMonth() + 1).padStart(2, "0");
-        const dd = String(parsed.getDate()).padStart(2, "0");
+        var yyyy = parsed.getFullYear();
+        var mm = String(parsed.getMonth() + 1).padStart(2, "0");
+        var dd = String(parsed.getDate()).padStart(2, "0");
 
-        return `${yyyy}-${mm}-${dd}`;
+        return yyyy + "-" + mm + "-" + dd;
       }
 
       return text;
     }
 
     function normalizeBirthday(value) {
-      const text = normalize(value);
+      var text = normalize(value);
 
       if (!text) return "";
 
-      let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      var match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 
       if (match) {
-        return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+        return String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
       }
 
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return `${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+        return String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
       }
 
       match = text.match(/^(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return `${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`;
+        return String(match[1]).padStart(2, "0") + "-" + String(match[2]).padStart(2, "0");
       }
 
-      const parsed = new Date(text);
+      var parsed = new Date(text);
 
       if (!isNaN(parsed.getTime())) {
-        const mm = String(parsed.getMonth() + 1).padStart(2, "0");
-        const dd = String(parsed.getDate()).padStart(2, "0");
+        var mm = String(parsed.getMonth() + 1).padStart(2, "0");
+        var dd = String(parsed.getDate()).padStart(2, "0");
 
-        return `${mm}-${dd}`;
+        return mm + "-" + dd;
       }
 
       return text;
     }
 
     function normalize(value) {
-      return String(value ?? "").trim();
+      return String(value == null ? "" : value).trim();
     }
 
     function escapeHtml(text) {
       return String(text || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     function escapeAttribute(text) {
@@ -671,14 +729,14 @@
     }
 
     function parseCSV(csvText) {
-      const rows = [];
-      let currentRow = [];
-      let currentCell = "";
-      let insideQuotes = false;
+      var rows = [];
+      var currentRow = [];
+      var currentCell = "";
+      var insideQuotes = false;
 
-      for (let i = 0; i < csvText.length; i++) {
-        const char = csvText[i];
-        const nextChar = csvText[i + 1];
+      for (var i = 0; i < csvText.length; i++) {
+        var char = csvText[i];
+        var nextChar = csvText[i + 1];
 
         if (char === '"' && insideQuotes && nextChar === '"') {
           currentCell += '"';
@@ -693,7 +751,7 @@
 
           currentRow.push(currentCell);
 
-          if (currentRow.some(cell => cell.trim() !== "")) {
+          if (currentRow.some(function (cell) { return cell.trim() !== ""; })) {
             rows.push(currentRow);
           }
 
@@ -706,19 +764,21 @@
 
       currentRow.push(currentCell);
 
-      if (currentRow.some(cell => cell.trim() !== "")) {
+      if (currentRow.some(function (cell) { return cell.trim() !== ""; })) {
         rows.push(currentRow);
       }
 
       if (!rows.length) return [];
 
-      const headers = rows[0].map(header => header.trim());
+      var headers = rows[0].map(function (header) {
+        return header.trim();
+      });
 
-      return rows.slice(1).map(row => {
-        const obj = {};
+      return rows.slice(1).map(function (row) {
+        var obj = {};
 
-        headers.forEach((header, index) => {
-          obj[header] = row[index] ?? "";
+        headers.forEach(function (header, index) {
+          obj[header] = row[index] || "";
         });
 
         return obj;
