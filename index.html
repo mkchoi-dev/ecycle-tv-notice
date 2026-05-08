@@ -17,7 +17,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      font-family: "Malgun Gothic", sans-serif;
       background: #0f172a;
       color: #ffffff;
     }
@@ -27,33 +27,18 @@
       flex-direction: column;
     }
 
-    /*
-      =====================================================
-      전체 화면 구조
-      =====================================================
-
-      상단 이미지 영역과 하단 안내 영역을 고정 비율로 분리합니다.
-      하단 안내문구 영역은 과하게 크지 않도록 12vh로 조정했습니다.
-    */
-
     .page {
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) 12vh;
+      grid-template-rows: minmax(0, 1fr) 14vh;
       gap: 1.4vh;
-      padding: 1.5vw 1.5vw 2vh;
+      padding: 1.4vw 1.4vw 2vh;
       background:
         radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 30%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32%),
         #0f172a;
     }
-
-    /*
-      =====================================================
-      상단 이미지 카드 영역
-      =====================================================
-    */
 
     .visual-area {
       min-height: 0;
@@ -68,11 +53,11 @@
     .image-frame {
       width: 100%;
       height: 100%;
-      border-radius: 1.6vw;
+      border-radius: 1.4vw;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.08);
       box-shadow:
-        0 2.2vh 5vh rgba(0, 0, 0, 0.32),
+        0 2vh 4.5vh rgba(0, 0, 0, 0.32),
         inset 0 0 0 1px rgba(255, 255, 255, 0.12);
       display: flex;
       align-items: center;
@@ -101,24 +86,18 @@
     }
 
     .empty-title {
-      font-size: 4vw;
+      font-size: 3.5vw;
       font-weight: 900;
       letter-spacing: -0.06em;
       margin-bottom: 1.5vh;
     }
 
     .empty-desc {
-      font-size: 1.6vw;
+      font-size: 1.5vw;
       line-height: 1.6;
       font-weight: 500;
       color: rgba(255, 255, 255, 0.72);
     }
-
-    /*
-      =====================================================
-      하단 안내 영역
-      =====================================================
-    */
 
     .ticker-area {
       width: 100%;
@@ -134,22 +113,22 @@
       position: relative;
       width: 100%;
       height: 100%;
-      min-height: 76px;
+      min-height: 82px;
       border-radius: 999px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.94);
       color: #0f172a;
-      box-shadow: 0 1.2vh 3.2vh rgba(0, 0, 0, 0.25);
+      box-shadow: 0 1vh 2.8vh rgba(0, 0, 0, 0.25);
       display: flex;
       align-items: center;
     }
 
     .ticker-logo-box {
       flex: 0 0 auto;
-      width: 15vw;
-      min-width: 210px;
+      width: 16vw;
+      min-width: 220px;
       height: 100%;
-      padding: 0.45vh 1.8vw;
+      padding: 0.6vh 1.8vw;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -160,14 +139,14 @@
 
     .ticker-logo {
       max-width: 100%;
-      max-height: 86%;
+      max-height: 88%;
       object-fit: contain;
       object-position: center center;
       display: block;
     }
 
     .ticker-logo-placeholder {
-      font-size: 1.15vw;
+      font-size: 1.2vw;
       font-weight: 900;
       letter-spacing: -0.04em;
       color: #123f7a;
@@ -186,10 +165,10 @@
     .ticker-text {
       position: absolute;
       white-space: nowrap;
-      font-size: 1.9vw;
-      font-weight: 800;
+      font-size: 2.05vw;
+      font-weight: 850;
       letter-spacing: -0.04em;
-      animation: tickerMove 45s linear infinite;
+      animation: tickerMove 48s linear infinite;
       padding-left: 100%;
     }
 
@@ -203,14 +182,6 @@
       }
     }
 
-    /*
-      =====================================================
-      TV 디버그 상태 표시
-      =====================================================
-
-      테스트 완료 후 숨기려면 아래 .status를 display: none; 으로 바꾸세요.
-    */
-
     .status {
       display: block;
       position: fixed;
@@ -219,10 +190,12 @@
       z-index: 9999;
       padding: 0.8vh 1.2vw;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.78);
+      background: rgba(0, 0, 0, 0.82);
       color: #ffffff;
       font-size: 1.2vw;
       font-weight: 800;
+      min-width: 16vw;
+      min-height: 3.2vh;
     }
 
     .blackout {
@@ -260,22 +233,10 @@
     </section>
   </div>
 
-  <div id="status" class="status"></div>
+  <div id="status" class="status">초기화 전</div>
 
   <script>
-    /*
-      =====================================================
-      1. 회사 CI 이미지 링크
-      =====================================================
-    */
-
     var COMPANY_CI_URL = "https://drive.google.com/file/d/18JQtgz8ztp6Ihfb-0h-R9HlSfu2IdUnk/view?usp=drive_link";
-
-    /*
-      =====================================================
-      2. Google Sheet CSV 게시 URL
-      =====================================================
-    */
 
     var CAMPAIGN_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=0&single=true&output=csv";
@@ -283,21 +244,9 @@
     var BIRTHDAY_CSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkGZ_4HDThuNeX7s-viGZUXNg9jYp2tU0Stfh7Y8jbF8zGTty37wlsvHEg4Zo5xfmEXQPjpjWPNhar/pub?gid=671387330&single=true&output=csv";
 
-    /*
-      =====================================================
-      3. 화면 표시 시간 설정
-      =====================================================
-    */
-
     var DISPLAY_TIME_ENABLED = false;
     var DISPLAY_START_HOUR = 7;
     var DISPLAY_END_HOUR = 16;
-
-    /*
-      =====================================================
-      4. 새로고침 설정
-      =====================================================
-    */
 
     var DATA_REFRESH_MS = 2 * 60 * 1000;
     var PAGE_REFRESH_MS = 60 * 60 * 1000;
@@ -305,17 +254,23 @@
     var currentCampaign = null;
     var todayBirthdays = [];
 
-    function init() {
-      renderCompanyLogo();
-      updateStatus("초기화 완료");
+    function leftPad2(value) {
+      value = String(value);
+      return value.length < 2 ? "0" + value : value;
+    }
 
+    function init() {
+      updateStatus("초기화 시작");
+      renderCompanyLogo();
       loadData();
 
       setInterval(loadData, DATA_REFRESH_MS);
       setInterval(function () {
         location.reload();
       }, PAGE_REFRESH_MS);
-      setInterval(updateStatusClock, 30 * 1000);
+      setInterval(function () {
+        updateStatus("대기 중");
+      }, 30000);
     }
 
     function renderCompanyLogo() {
@@ -350,73 +305,110 @@
 
       document.body.classList.remove("blackout");
 
-      Promise.all([
-        fetchText(CAMPAIGN_CSV_URL),
-        fetchText(BIRTHDAY_CSV_URL)
-      ])
-      .then(function (results) {
-        updateStatus("CSV 수신 완료");
+      loadBothCsv(function (campaignCsv, birthdayCsv) {
+        try {
+          updateStatus("CSV 수신 완료");
 
-        var campaignCsv = results[0];
-        var birthdayCsv = results[1];
+          validateCsvResponse(campaignCsv);
+          validateCsvResponse(birthdayCsv);
 
-        validateCsvResponse(campaignCsv);
-        validateCsvResponse(birthdayCsv);
+          updateStatus("CSV 검증 완료");
 
-        updateStatus("CSV 검증 완료");
+          var campaignRows = parseCSV(campaignCsv);
+          var birthdayRows = parseCSV(birthdayCsv);
 
-        var campaignRows = parseCSV(campaignCsv);
-        var birthdayRows = parseCSV(birthdayCsv);
+          updateStatus("캠페인 " + campaignRows.length + "행 / 생일 " + birthdayRows.length + "행");
 
-        updateStatus(
-          "캠페인 " +
-          campaignRows.length +
-          "행 / 생일 " +
-          birthdayRows.length +
-          "행"
-        );
+          currentCampaign = findTodayCampaign(campaignRows);
+          todayBirthdays = findTodayBirthdays(birthdayRows);
 
-        currentCampaign = findTodayCampaign(campaignRows);
-        todayBirthdays = findTodayBirthdays(birthdayRows);
+          if (currentCampaign) {
+            updateStatus("오늘 캠페인 찾음");
+          } else {
+            updateStatus("오늘 캠페인 없음");
+          }
 
-        if (currentCampaign) {
-          updateStatus("오늘 캠페인 찾음");
-        } else {
-          updateStatus("오늘 캠페인 없음");
+          render();
+        } catch (error) {
+          updateStatus("오류: " + error.message);
+          renderError(
+            "데이터를 처리하지 못했습니다.",
+            "CSV 파싱 또는 날짜 조건 처리 중 오류가 발생했습니다."
+          );
         }
-
-        render();
-      })
-      .catch(function (error) {
-        console.error(error);
-
-        updateStatus("오류: " + error.message);
-
+      }, function (message) {
+        updateStatus("CSV 오류: " + message);
         renderError(
           "데이터를 불러오지 못했습니다.",
-          "TV 브라우저에서 CSV fetch 또는 JS 실행이 실패했을 수 있습니다."
+          "TV 브라우저에서 CSV 요청이 실패했을 수 있습니다."
         );
       });
     }
 
-    function fetchText(url) {
+    function loadBothCsv(successCallback, errorCallback) {
+      var campaignDone = false;
+      var birthdayDone = false;
+      var campaignText = "";
+      var birthdayText = "";
+      var failed = false;
+
+      loadText(CAMPAIGN_CSV_URL, function (text) {
+        campaignDone = true;
+        campaignText = text;
+        finishIfReady();
+      }, function (message) {
+        if (!failed) {
+          failed = true;
+          errorCallback("캠페인 " + message);
+        }
+      });
+
+      loadText(BIRTHDAY_CSV_URL, function (text) {
+        birthdayDone = true;
+        birthdayText = text;
+        finishIfReady();
+      }, function (message) {
+        if (!failed) {
+          failed = true;
+          errorCallback("생일 " + message);
+        }
+      });
+
+      function finishIfReady() {
+        if (!failed && campaignDone && birthdayDone) {
+          successCallback(campaignText, birthdayText);
+        }
+      }
+    }
+
+    function loadText(url, successCallback, errorCallback) {
       if (!url) {
-        return Promise.reject(new Error("CSV URL이 비어 있습니다."));
+        errorCallback("URL 비어 있음");
+        return;
       }
 
       var separator = url.indexOf("?") !== -1 ? "&" : "?";
-      var finalUrl = url + separator + "cb=" + Date.now() + "&r=" + Math.random().toString(36).slice(2);
+      var finalUrl = url + separator + "cb=" + new Date().getTime() + "&r=" + Math.random();
 
-      return fetch(finalUrl, {
-        method: "GET",
-        cache: "no-store"
-      }).then(function (response) {
-        if (!response.ok) {
-          throw new Error("CSV 요청 실패: " + response.status);
+      var xhr = new XMLHttpRequest();
+
+      xhr.open("GET", finalUrl, true);
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            successCallback(xhr.responseText);
+          } else {
+            errorCallback("요청 실패 " + xhr.status);
+          }
         }
+      };
 
-        return response.text();
-      });
+      xhr.onerror = function () {
+        errorCallback("네트워크 오류");
+      };
+
+      xhr.send();
     }
 
     function validateCsvResponse(text) {
@@ -427,7 +419,7 @@
         lower.indexOf("<html") === 0 ||
         lower.indexOf("<title>google accounts</title>") !== -1
       ) {
-        throw new Error("CSV가 아니라 HTML이 반환되었습니다. 시트 게시/공유 권한을 확인하세요.");
+        throw new Error("CSV가 아니라 HTML 반환");
       }
     }
 
@@ -570,16 +562,6 @@
       return hour >= DISPLAY_START_HOUR && hour < DISPLAY_END_HOUR;
     }
 
-    /*
-      =====================================================
-      이미지 URL 변환
-      =====================================================
-
-      1차: lh3.googleusercontent.com
-      2차 fallback: drive.google.com/thumbnail
-      구형 TV 브라우저 호환성을 위해 optional chaining 등 최신 문법 사용 안 함.
-    */
-
     function convertImageUrl(url) {
       var cleanUrl = normalize(url);
 
@@ -675,15 +657,11 @@
       if (!status) return;
 
       var now = new Date();
-      var hh = String(now.getHours()).padStart(2, "0");
-      var mm = String(now.getMinutes()).padStart(2, "0");
-      var ss = String(now.getSeconds()).padStart(2, "0");
+      var hh = leftPad2(now.getHours());
+      var mm = leftPad2(now.getMinutes());
+      var ss = leftPad2(now.getSeconds());
 
-      status.textContent = message + " · " + hh + ":" + mm + ":" + ss;
-    }
-
-    function updateStatusClock() {
-      updateStatus("대기 중");
+      status.innerHTML = escapeHtml(message + " · " + hh + ":" + mm + ":" + ss);
     }
 
     function renderError(title, desc) {
@@ -702,16 +680,16 @@
     function getTodayString() {
       var now = new Date();
       var yyyy = now.getFullYear();
-      var mm = String(now.getMonth() + 1).padStart(2, "0");
-      var dd = String(now.getDate()).padStart(2, "0");
+      var mm = leftPad2(now.getMonth() + 1);
+      var dd = leftPad2(now.getDate());
 
       return yyyy + "-" + mm + "-" + dd;
     }
 
     function getTodayMMDD() {
       var now = new Date();
-      var mm = String(now.getMonth() + 1).padStart(2, "0");
-      var dd = String(now.getDate()).padStart(2, "0");
+      var mm = leftPad2(now.getMonth() + 1);
+      var dd = leftPad2(now.getDate());
 
       return mm + "-" + dd;
     }
@@ -724,21 +702,21 @@
       var match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 
       if (match) {
-        return match[1] + "-" + String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
+        return match[1] + "-" + leftPad2(match[2]) + "-" + leftPad2(match[3]);
       }
 
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return match[1] + "-" + String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
+        return match[1] + "-" + leftPad2(match[2]) + "-" + leftPad2(match[3]);
       }
 
       var parsed = new Date(text);
 
       if (!isNaN(parsed.getTime())) {
         var yyyy = parsed.getFullYear();
-        var mm = String(parsed.getMonth() + 1).padStart(2, "0");
-        var dd = String(parsed.getDate()).padStart(2, "0");
+        var mm = leftPad2(parsed.getMonth() + 1);
+        var dd = leftPad2(parsed.getDate());
 
         return yyyy + "-" + mm + "-" + dd;
       }
@@ -754,26 +732,26 @@
       var match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 
       if (match) {
-        return String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
+        return leftPad2(match[2]) + "-" + leftPad2(match[3]);
       }
 
       match = text.match(/^(\d{4})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return String(match[2]).padStart(2, "0") + "-" + String(match[3]).padStart(2, "0");
+        return leftPad2(match[2]) + "-" + leftPad2(match[3]);
       }
 
       match = text.match(/^(\d{1,2})[.\-/월\s]+(\d{1,2})/);
 
       if (match) {
-        return String(match[1]).padStart(2, "0") + "-" + String(match[2]).padStart(2, "0");
+        return leftPad2(match[1]) + "-" + leftPad2(match[2]);
       }
 
       var parsed = new Date(text);
 
       if (!isNaN(parsed.getTime())) {
-        var mm = String(parsed.getMonth() + 1).padStart(2, "0");
-        var dd = String(parsed.getDate()).padStart(2, "0");
+        var mm = leftPad2(parsed.getMonth() + 1);
+        var dd = leftPad2(parsed.getDate());
 
         return mm + "-" + dd;
       }
@@ -805,8 +783,8 @@
       var insideQuotes = false;
 
       for (var i = 0; i < csvText.length; i++) {
-        var char = csvText[i];
-        var nextChar = csvText[i + 1];
+        var char = csvText.charAt(i);
+        var nextChar = csvText.charAt(i + 1);
 
         if (char === '"' && insideQuotes && nextChar === '"') {
           currentCell += '"';
@@ -821,7 +799,7 @@
 
           currentRow.push(currentCell);
 
-          if (currentRow.some(function (cell) { return cell.trim() !== ""; })) {
+          if (rowHasValue(currentRow)) {
             rows.push(currentRow);
           }
 
@@ -834,25 +812,40 @@
 
       currentRow.push(currentCell);
 
-      if (currentRow.some(function (cell) { return cell.trim() !== ""; })) {
+      if (rowHasValue(currentRow)) {
         rows.push(currentRow);
       }
 
       if (!rows.length) return [];
 
-      var headers = rows[0].map(function (header) {
-        return header.trim();
-      });
+      var headers = [];
+      for (var h = 0; h < rows[0].length; h++) {
+        headers.push(String(rows[0][h]).trim());
+      }
 
-      return rows.slice(1).map(function (row) {
+      var result = [];
+
+      for (var r = 1; r < rows.length; r++) {
         var obj = {};
 
-        headers.forEach(function (header, index) {
-          obj[header] = row[index] || "";
-        });
+        for (var c = 0; c < headers.length; c++) {
+          obj[headers[c]] = rows[r][c] || "";
+        }
 
-        return obj;
-      });
+        result.push(obj);
+      }
+
+      return result;
+    }
+
+    function rowHasValue(row) {
+      for (var i = 0; i < row.length; i++) {
+        if (String(row[i]).trim() !== "") {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     init();
