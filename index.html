@@ -32,20 +32,17 @@
       전체 화면 구조
       =====================================================
 
-      TV 디버깅용으로 하단 안내 영역을 크게 확보합니다.
-      상단 이미지 영역: 72vh
-      간격: 2vh
-      하단 안내 영역: 20vh
-      상하 패딩: 각 2vh
+      상단 이미지 영역과 하단 안내 영역을 고정 비율로 분리합니다.
+      하단 안내문구 영역은 과하게 크지 않도록 12vh로 조정했습니다.
     */
 
     .page {
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-rows: 72vh 20vh;
-      gap: 2vh;
-      padding: 2vh 2vw 2vh;
+      grid-template-rows: minmax(0, 1fr) 12vh;
+      gap: 1.4vh;
+      padding: 1.5vw 1.5vw 2vh;
       background:
         radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 30%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32%),
@@ -137,7 +134,7 @@
       position: relative;
       width: 100%;
       height: 100%;
-      min-height: 110px;
+      min-height: 76px;
       border-radius: 999px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.94);
@@ -149,10 +146,10 @@
 
     .ticker-logo-box {
       flex: 0 0 auto;
-      width: 18vw;
-      min-width: 260px;
+      width: 15vw;
+      min-width: 210px;
       height: 100%;
-      padding: 1vh 2vw;
+      padding: 0.45vh 1.8vw;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -163,14 +160,14 @@
 
     .ticker-logo {
       max-width: 100%;
-      max-height: 92%;
+      max-height: 86%;
       object-fit: contain;
       object-position: center center;
       display: block;
     }
 
     .ticker-logo-placeholder {
-      font-size: 1.3vw;
+      font-size: 1.15vw;
       font-weight: 900;
       letter-spacing: -0.04em;
       color: #123f7a;
@@ -189,10 +186,10 @@
     .ticker-text {
       position: absolute;
       white-space: nowrap;
-      font-size: 2.8vw;
-      font-weight: 900;
+      font-size: 1.9vw;
+      font-weight: 800;
       letter-spacing: -0.04em;
-      animation: tickerMove 60s linear infinite;
+      animation: tickerMove 45s linear infinite;
       padding-left: 100%;
     }
 
@@ -211,7 +208,7 @@
       TV 디버그 상태 표시
       =====================================================
 
-      테스트 완료 후 숨기려면 display: none; 으로 바꾸면 됩니다.
+      테스트 완료 후 숨기려면 아래 .status를 display: none; 으로 바꾸세요.
     */
 
     .status {
