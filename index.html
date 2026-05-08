@@ -27,18 +27,36 @@
       flex-direction: column;
     }
 
+    /*
+      =====================================================
+      전체 화면 구조
+      =====================================================
+
+      TV 디버깅용으로 하단 안내 영역을 크게 확보합니다.
+      상단 이미지 영역: 72vh
+      간격: 2vh
+      하단 안내 영역: 20vh
+      상하 패딩: 각 2vh
+    */
+
     .page {
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) 10vh;
-      gap: 1.2vh;
-      padding: 1.5vw 1.5vw 2vh;
+      grid-template-rows: 72vh 20vh;
+      gap: 2vh;
+      padding: 2vh 2vw 2vh;
       background:
         radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 30%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32%),
         #0f172a;
     }
+
+    /*
+      =====================================================
+      상단 이미지 카드 영역
+      =====================================================
+    */
 
     .visual-area {
       min-height: 0;
@@ -99,6 +117,12 @@
       color: rgba(255, 255, 255, 0.72);
     }
 
+    /*
+      =====================================================
+      하단 안내 영역
+      =====================================================
+    */
+
     .ticker-area {
       width: 100%;
       height: 100%;
@@ -106,15 +130,17 @@
       padding: 0;
       display: flex;
       align-items: center;
+      overflow: hidden;
     }
 
     .ticker-shell {
       position: relative;
       width: 100%;
       height: 100%;
+      min-height: 110px;
       border-radius: 999px;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
       color: #0f172a;
       box-shadow: 0 1.2vh 3.2vh rgba(0, 0, 0, 0.25);
       display: flex;
@@ -123,10 +149,10 @@
 
     .ticker-logo-box {
       flex: 0 0 auto;
-      width: 15vw;
-      min-width: 210px;
+      width: 18vw;
+      min-width: 260px;
       height: 100%;
-      padding: 0.45vh 1.8vw;
+      padding: 1vh 2vw;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -137,15 +163,14 @@
 
     .ticker-logo {
       max-width: 100%;
-      max-height: 86%;
+      max-height: 92%;
       object-fit: contain;
       object-position: center center;
       display: block;
-      transform: translateY(0.1vh);
     }
 
     .ticker-logo-placeholder {
-      font-size: 1.15vw;
+      font-size: 1.3vw;
       font-weight: 900;
       letter-spacing: -0.04em;
       color: #123f7a;
@@ -164,10 +189,10 @@
     .ticker-text {
       position: absolute;
       white-space: nowrap;
-      font-size: 1.9vw;
-      font-weight: 800;
+      font-size: 2.8vw;
+      font-weight: 900;
       letter-spacing: -0.04em;
-      animation: tickerMove 35s linear infinite;
+      animation: tickerMove 60s linear infinite;
       padding-left: 100%;
     }
 
@@ -181,8 +206,26 @@
       }
     }
 
+    /*
+      =====================================================
+      TV 디버그 상태 표시
+      =====================================================
+
+      테스트 완료 후 숨기려면 display: none; 으로 바꾸면 됩니다.
+    */
+
     .status {
-      display: none;
+      display: block;
+      position: fixed;
+      top: 1vh;
+      left: 1vw;
+      z-index: 9999;
+      padding: 0.8vh 1.2vw;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.78);
+      color: #ffffff;
+      font-size: 1.2vw;
+      font-weight: 800;
     }
 
     .blackout {
@@ -267,7 +310,7 @@
 
     function init() {
       renderCompanyLogo();
-      updateStatus("데이터 불러오는 중");
+      updateStatus("초기화 완료");
 
       loadData();
 
@@ -300,8 +343,11 @@
     }
 
     function loadData() {
+      updateStatus("CSV 요청 시작");
+
       if (!isDisplayTime()) {
         document.body.classList.add("blackout");
+        updateStatus("표시 시간 아님");
         return;
       }
 
@@ -312,30 +358,47 @@
         fetchText(BIRTHDAY_CSV_URL)
       ])
       .then(function (results) {
+        updateStatus("CSV 수신 완료");
+
         var campaignCsv = results[0];
         var birthdayCsv = results[1];
 
         validateCsvResponse(campaignCsv);
         validateCsvResponse(birthdayCsv);
 
+        updateStatus("CSV 검증 완료");
+
         var campaignRows = parseCSV(campaignCsv);
         var birthdayRows = parseCSV(birthdayCsv);
+
+        updateStatus(
+          "캠페인 " +
+          campaignRows.length +
+          "행 / 생일 " +
+          birthdayRows.length +
+          "행"
+        );
 
         currentCampaign = findTodayCampaign(campaignRows);
         todayBirthdays = findTodayBirthdays(birthdayRows);
 
+        if (currentCampaign) {
+          updateStatus("오늘 캠페인 찾음");
+        } else {
+          updateStatus("오늘 캠페인 없음");
+        }
+
         render();
-        updateStatus("정상 표시 중");
       })
       .catch(function (error) {
         console.error(error);
 
+        updateStatus("오류: " + error.message);
+
         renderError(
           "데이터를 불러오지 못했습니다.",
-          "Google Sheet CSV 게시 URL, 시트 게시 상태, 네트워크 연결을 확인해 주세요."
+          "TV 브라우저에서 CSV fetch 또는 JS 실행이 실패했을 수 있습니다."
         );
-
-        updateStatus("오류 발생");
       });
     }
 
@@ -435,6 +498,8 @@
         return;
       }
 
+      updateStatus("이미지 로딩 시도");
+
       frame.innerHTML =
         '<img ' +
           'class="campaign-image" ' +
@@ -442,6 +507,7 @@
           'data-fallback="' + escapeAttribute(fallbackImageUrl) + '" ' +
           'data-kind="campaign" ' +
           'alt="캠페인 안내 이미지" ' +
+          'onload="updateStatus(\'이미지 로딩 성공\')" ' +
           'onerror="handleImageError(this)" ' +
         '/>';
     }
@@ -582,7 +648,10 @@
       var fallback = img.getAttribute("data-fallback");
       var kind = img.getAttribute("data-kind");
 
+      updateStatus("이미지 로딩 실패");
+
       if (fallback && img.src !== fallback) {
+        updateStatus("대체 이미지 시도");
         img.src = fallback;
         img.setAttribute("data-fallback", "");
         return;
@@ -590,6 +659,7 @@
 
       if (kind === "logo") {
         img.parentElement.innerHTML = '<div class="ticker-logo-placeholder">COMPANY</div>';
+        updateStatus("CI 이미지 실패");
         return;
       }
 
@@ -598,6 +668,8 @@
           '<div class="empty-title">이미지를 불러오지 못했습니다.</div>' +
           '<div class="empty-desc">TV 브라우저에서 Google Drive 이미지 로딩이 차단되었을 수 있습니다.</div>' +
         '</div>';
+
+      updateStatus("이미지 최종 실패");
     }
 
     function updateStatus(message) {
@@ -608,12 +680,13 @@
       var now = new Date();
       var hh = String(now.getHours()).padStart(2, "0");
       var mm = String(now.getMinutes()).padStart(2, "0");
+      var ss = String(now.getSeconds()).padStart(2, "0");
 
-      status.textContent = message + " · " + hh + ":" + mm;
+      status.textContent = message + " · " + hh + ":" + mm + ":" + ss;
     }
 
     function updateStatusClock() {
-      updateStatus("정상 표시 중");
+      updateStatus("대기 중");
     }
 
     function renderError(title, desc) {
